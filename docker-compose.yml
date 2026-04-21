@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: flowgen_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: R00t$ecret!
+      MYSQL_DATABASE: flowgen
+      MYSQL_USER: flowgen
+      MYSQL_PASSWORD: FlowGen@2025!
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/docker/mysql/init:/docker-entrypoint-initdb.d
+    networks: [flowgen_net]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: flowgen_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MYSQL_HOST: db
+      MYSQL_DATABASE: flowgen
+      MYSQL_USER: flowgen
+      MYSQL_PASSWORD: FlowGen@2025!
+      JWT_SECRET: ${JWT_SECRET}
+      VM_WORKER_URL: ${VM_WORKER_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [flowgen_net]
+
+volumes:
+  mysql_data:
+
+networks:
+  flowgen_net:

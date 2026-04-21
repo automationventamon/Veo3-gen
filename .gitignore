@@ -1,0 +1,9 @@
+node_modules/
+frontend/dist/
+backend/uploads/
+backend/.env
+.env
+vm-worker/jobs/
+vm-worker/flow_session/
+vm-worker/__pycache__/
+*.pyc
