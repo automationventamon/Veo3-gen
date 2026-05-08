@@ -1,4 +1,4 @@
-import { downloadJobUrl } from "../services/jobService.js";
+import { useState } from "react";
 
 const STATUS_ICON = { pending: "🕐", running: "⚙️", done: "✅", error: "❌" };
 const STATUS_LABEL = { pending: "En cola", running: "Generando...", done: "Listo", error: "Error" };
@@ -7,7 +7,10 @@ function formatDate(iso) {
   return new Date(iso).toLocaleString("es", { dateStyle: "short", timeStyle: "short" });
 }
 
-export default function JobStatus({ jobs }) {
+export default function JobStatus({ jobs, onCancel }) {
+  const [cancelling, setCancelling] = useState(false);
+  const active = jobs.find((j) => j.status === "running" || j.status === "pending");
+
   if (!jobs.length) {
     return (
       <div className="empty-state">
@@ -18,7 +21,15 @@ export default function JobStatus({ jobs }) {
     );
   }
 
-  const active = jobs.find((j) => j.status === "running" || j.status === "pending");
+  const handleCancel = async () => {
+    if (!active || cancelling) return;
+    setCancelling(true);
+    try {
+      await onCancel(active.id);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -30,8 +41,20 @@ export default function JobStatus({ jobs }) {
             <div className="status-panel-title">
               {active.status === "running" ? "⚙️ Generando videos..." : "🕐 En cola..."}
             </div>
-            <div className={`status-badge ${active.status}`}>
-              {STATUS_LABEL[active.status]}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div className={`status-badge ${active.status}`}>
+                {STATUS_LABEL[active.status]}
+              </div>
+              {onCancel && (
+                <button
+                  className="btn-cancel"
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  title="Detener generación"
+                >
+                  {cancelling ? "Deteniendo..." : "⏹ Detener"}
+                </button>
+              )}
             </div>
           </div>
 
@@ -74,16 +97,15 @@ export default function JobStatus({ jobs }) {
               )}
             </div>
             <div className={`status-badge ${job.status}`}>{STATUS_LABEL[job.status]}</div>
-            {job.status === "done" && (
-              <a
-                href={downloadJobUrl(job.id)}
-                download
-                style={{ marginLeft: 8 }}
-              >
+            {job.status === "done" && job.driveLink && (
+              <a href={job.driveLink} target="_blank" rel="noreferrer" style={{ marginLeft: 8 }}>
                 <button className="btn-zip" style={{ padding: "7px 14px", fontSize: 12 }}>
-                  ⬇️ ZIP
+                  ▶ Ver videos
                 </button>
               </a>
+            )}
+            {job.status === "done" && !job.driveLink && (
+              <span style={{ marginLeft: 8, fontSize: 11, color: "var(--text-muted)" }}>Subiendo...</span>
             )}
           </div>
         ))}

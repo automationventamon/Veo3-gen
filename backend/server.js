@@ -198,14 +198,30 @@ app.get('/api/jobs/:id', requireAuth, async (req, res) => {
       const vmRes  = await fetch(`${VM_URL}/api/job/${job.vm_job_id}`);
       const vmData = await vmRes.json();
       await pool.query(
-        'UPDATE jobs SET status=?, done_images=?, error_msg=? WHERE id=?',
-        [vmData.status, vmData.progress?.done || 0, vmData.error || null, job.id]
+        'UPDATE jobs SET status=?, done_images=?, error_msg=?, drive_link=? WHERE id=?',
+        [vmData.status, vmData.progress?.done || 0, vmData.error || null, vmData.drive_link || null, job.id]
       );
-      Object.assign(job, { status: vmData.status, done_images: vmData.progress?.done || 0 });
+      Object.assign(job, { status: vmData.status, done_images: vmData.progress?.done || 0, drive_link: vmData.drive_link || null });
     } catch {}
   }
 
   return res.json(formatJob(job));
+});
+
+/* CANCEL JOB */
+app.post('/api/jobs/:id/cancel', requireAuth, async (req, res) => {
+  const [rows] = await pool.query('SELECT * FROM jobs WHERE id = ? AND user_id = ?', [req.params.id, req.user.sub]);
+  if (!rows[0]) return res.status(404).json({ error: 'Job not found.' });
+  if (rows[0].status !== 'pending' && rows[0].status !== 'running') {
+    return res.status(400).json({ error: 'Job is not active.' });
+  }
+
+  try {
+    await fetch(`${VM_URL}/api/job/${req.params.id}/cancel`, { method: 'POST' });
+  } catch {}
+
+  await pool.query("UPDATE jobs SET status='error', error_msg='Cancelado por el usuario' WHERE id=?", [req.params.id]);
+  return res.json({ status: 'cancelled' });
 });
 
 /* DOWNLOAD JOB */
@@ -244,6 +260,7 @@ function formatJob(row) {
     totalImages: row.total_images,
     doneImages:  row.done_images,
     errorMsg:    row.error_msg || null,
+    driveLink:   row.drive_link || null,
     createdAt:   row.created_at,
     updatedAt:   row.updated_at,
   };
@@ -279,8 +296,8 @@ function parseExpiry(exp) {
 async function main() {
   await initDatabase();
   app.listen(PORT, () => {
-    console.log(`✦ FlowGen backend running at http://localhost:${PORT}`);
-    console.log(`✦ VM Worker URL: ${VM_URL}`);
+    console.log(`[FlowGen] Backend running at http://localhost:${PORT}`);
+    console.log(`[FlowGen] VM Worker URL: ${VM_URL}`);
   });
 }
 

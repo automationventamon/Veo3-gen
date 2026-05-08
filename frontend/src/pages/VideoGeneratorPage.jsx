@@ -3,7 +3,7 @@ import Sidebar     from "../components/Sidebar.jsx";
 import ImageUploader from "../components/ImageUploader.jsx";
 import JobStatus   from "../components/JobStatus.jsx";
 import { useVideoJobs } from "../hooks/useVideoJobs.js";
-import { createJob }    from "../services/jobService.js";
+import { createJob, cancelJob } from "../services/jobService.js";
 
 export default function VideoGeneratorPage({ user, onLogout, isDark, onToggleTheme }) {
   const [images,      setImages]      = useState([]);
@@ -11,7 +11,12 @@ export default function VideoGeneratorPage({ user, onLogout, isDark, onToggleThe
   const [submitError, setSubmitError] = useState("");
   const [activeView,  setActiveView]  = useState("generator");
 
-  const { jobs, addJob, hasActive } = useVideoJobs();
+  const { jobs, addJob, hasActive, refresh } = useVideoJobs();
+
+  const handleCancel = async (jobId) => {
+    await cancelJob(jobId);
+    refresh();
+  };
 
   const handleGenerate = async () => {
     if (!images.length) return;
@@ -20,7 +25,6 @@ export default function VideoGeneratorPage({ user, onLogout, isDark, onToggleThe
     try {
       const job = await createJob(images);
       addJob(job);
-      // clear images after submitting
       setImages([]);
       setActiveView("generator");
     } catch (err) {
@@ -52,7 +56,7 @@ export default function VideoGeneratorPage({ user, onLogout, isDark, onToggleThe
             </div>
             <div className="topbar-sub">
               {activeView === "generator"
-                ? "Subí imágenes, escribí los prompts y enviá al bot de Google Flow"
+                ? "Subí imágenes, cargá los prompts y enviá al bot de Google Flow"
                 : "Todos tus trabajos de generación"}
             </div>
           </div>
@@ -69,7 +73,6 @@ export default function VideoGeneratorPage({ user, onLogout, isDark, onToggleThe
         <div className="body">
           {activeView === "generator" && (
             <>
-              {/* Upload + prompts */}
               <div className="panel-card">
                 <div className="panel-card-title">
                   Imágenes
@@ -80,7 +83,6 @@ export default function VideoGeneratorPage({ user, onLogout, isDark, onToggleThe
                 <ImageUploader images={images} onImagesChange={setImages} />
               </div>
 
-              {/* Generate button */}
               {images.length > 0 && (
                 <div>
                   <button
@@ -105,14 +107,13 @@ export default function VideoGeneratorPage({ user, onLogout, isDark, onToggleThe
                 </div>
               )}
 
-              {/* Active jobs preview */}
               {jobs.length > 0 && (
                 <div className="panel-card">
                   <div className="panel-card-title">
                     Trabajos recientes
                     <span className="panel-card-title-count">{jobs.length}</span>
                   </div>
-                  <JobStatus jobs={jobs.slice(0, 3)} />
+                  <JobStatus jobs={jobs.slice(0, 3)} onCancel={handleCancel} />
                   {jobs.length > 3 && (
                     <div
                       style={{ marginTop: 12, fontSize: 12, color: "var(--green)", cursor: "pointer", fontWeight: 600 }}
@@ -132,7 +133,7 @@ export default function VideoGeneratorPage({ user, onLogout, isDark, onToggleThe
                 Historial de trabajos
                 <span className="panel-card-title-count">{jobs.length}</span>
               </div>
-              <JobStatus jobs={jobs} />
+              <JobStatus jobs={jobs} onCancel={handleCancel} />
             </div>
           )}
         </div>

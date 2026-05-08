@@ -401,6 +401,37 @@ body {
 .empty-state-title { font-size: 15px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
 .empty-state-sub { font-size: 13px; color: var(--muted); line-height: 1.5; }
 
+/* ── EXCEL BUTTON ────────────────────────── */
+.btn-cancel {
+  background: transparent;
+  border: 1.5px solid rgba(214,59,59,0.4);
+  border-radius: var(--r-sm);
+  color: var(--error);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-cancel:hover:not(:disabled) { background: rgba(214,59,59,0.08); border-color: var(--error); }
+.btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-excel {
+  background: var(--surface2); border: 1.5px solid var(--border2);
+  border-radius: var(--r-sm); color: var(--text2); font-family: var(--font);
+  font-size: 12px; font-weight: 600; padding: 7px 14px; cursor: pointer;
+  transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+}
+.btn-excel:hover { background: var(--surface3); border-color: var(--green); color: var(--green); }
+.excel-badge {
+  font-size: 11px; font-weight: 600; color: var(--green);
+  background: var(--green-lt); border: 1px solid rgba(52,208,122,0.25);
+  border-radius: 20px; padding: 3px 10px; white-space: nowrap;
+}
+
 /* ── RESPONSIVE ──────────────────────────── */
 @media (max-width: 768px) {
   .shell { flex-direction: column; height: auto; min-height: 100vh; }

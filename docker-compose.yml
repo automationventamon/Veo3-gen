@@ -13,6 +13,8 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./backend/docker/mysql/init:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
     networks: [flowgen_net]
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
